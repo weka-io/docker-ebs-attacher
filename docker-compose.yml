@@ -1,16 +1,9 @@
-# useful for testing with `docker-compose build && docker-compose run attacher`
+# useful for testing with `VOLUME_ID=vol-xxxx docker-compose build && VOLUME_ID=vol-xxxx docker-compose run attacher`
 # your docker command should be set up against ec2 machine
 attacher:
-  build: ./attacher
+  build: ./
   environment:
-    VOLUME_ID: ${VOLUME_ID}
+    VOLUME_ID: "${VOLUME_ID}"
   volumes:
     - /:/host_root
   privileged: true
-
-validator:
-  build: ./validator
-  environment:
-    VOLUME_ID: ${VOLUME_ID}
-  volumes:
-    - /volumes:/volumes

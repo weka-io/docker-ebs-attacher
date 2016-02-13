@@ -1,0 +1,45 @@
+placeholder:
+  image: busybox
+  volumes:
+    - /tmp/placeholder:/placeholder
+
+attacher:
+  image: wekaio/ebs-attacher
+  roles:
+    - global
+  environment:
+    - VOLUME_ID=vol-xxx
+    - RESTART_SERVICES=influxdb.influxdb, influxdb.nginx
+  volumes:
+    - /:/host_root
+  volumes_from:
+    - placeholder
+  privileged: true
+
+influxdb:
+  image: tutum/influxdb
+  links:
+    - "attacher:attacher"
+  volumes_from:
+    - placeholder
+  volumes:
+    - "/volumes/vol-xxx/influxdb:/data"
+  autorestart: ON_FAILURE
+  autoredeploy: true
+  environment:
+    - ADMIN_USER=xxxx
+    - INFLUXDB_INIT_PWD=xxxx
+    - PRE_CREATE_DB=xxxx
+
+grafana:
+  image: grafana
+  links:
+    - "influxdb:influxdb"
+  volumes_from:
+    - placeholder
+  volumes:
+    - "/volumes/vol-xxx/grafana:/var/lib/grafana"
+  autorestart: ON_FAILURE
+  autoredeploy: true
+  environment:
+    - GF_SECURITY_ADMIN_PASSWORD=xxxx
