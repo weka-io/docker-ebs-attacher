@@ -6,6 +6,8 @@ from collections import defaultdict
 from logging import getLogger
 
 import sys
+from time import sleep
+
 from boto3.session import Session
 from bunch import bunchify
 from plumbum import local
@@ -167,7 +169,7 @@ def get_target_services():
     ret_services = []
     stacked_services = defaultdict(list)
     for stack, service in servicepairs:
-        stacked_services[stack] = service
+        stacked_services[stack].append(service)
 
     for target_stack, target_services in stacked_services.items():
         for stack in stacks.objects:
@@ -175,8 +177,10 @@ def get_target_services():
                 services = stack.services
                 for service in services:
                     s = make_request(service, fullpath=True)
+                    logger.info("Cloud service: %s" % s)
                     if s.name in target_services:
                         ret_services.append(s)
+    logger.info("Found services: %s" % [s.name for s in ret_services])
     return ret_services
 
 def stop_if_running(services):
@@ -186,6 +190,8 @@ def stop_if_running(services):
             make_request("%sstop/" % service.resource_uri, 'post', fullpath=True)
 
 def redeploy_service(services):
+    if services:
+        sleep(3) # no good explanation, but otherwise wrong mount was used once...(non-ebs, but rootfs)
     for service in services:
         logger.info("Redeploying service %s" % service.name)
         make_request("%sredeploy/" % service.resource_uri, 'post', fullpath=True)
@@ -199,7 +205,6 @@ if __name__ == '__main__':
     resource = session.resource("ec2")
     volume = resource.Volume(volume_id)
     instance = resource.Instance(instance_id)
-    services = get_target_services()
     if local.path('/host_root/volumes/%s/.mounted' % volume.id).exists():
         logger.info("Already mounted, nothing to do")
     else:

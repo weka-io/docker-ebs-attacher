@@ -9,7 +9,7 @@ attacher:
     - global
   environment:
     - VOLUME_ID=vol-xxx
-    - RESTART_SERVICES=influxdb.influxdb, influxdb.nginx
+    - RESTART_SERVICES=influxdb.influxdb, influxdb.grafana
   volumes:
     - /:/host_root
   volumes_from:
@@ -17,13 +17,16 @@ attacher:
   privileged: true
 
 influxdb:
-  image: tutum/influxdb
+  image: wekaio/influxdb
   links:
     - "attacher:attacher"
   volumes_from:
     - placeholder
   volumes:
     - "/volumes/vol-xxx/influxdb:/data"
+  ports:
+    - 8083:8083
+    - 8086:8086
   autorestart: ON_FAILURE
   autoredeploy: true
   environment:
@@ -32,14 +35,16 @@ influxdb:
     - PRE_CREATE_DB=xxxx
 
 grafana:
-  image: grafana
+  image: grafana/grafana
   links:
     - "influxdb:influxdb"
   volumes_from:
     - placeholder
+  ports:
+    - "3000:3000"
   volumes:
     - "/volumes/vol-xxx/grafana:/var/lib/grafana"
   autorestart: ON_FAILURE
-  autoredeploy: true
+  autoredeploy: false
   environment:
     - GF_SECURITY_ADMIN_PASSWORD=xxxx
