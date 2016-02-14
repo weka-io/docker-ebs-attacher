@@ -74,8 +74,7 @@ def mount_to_instance(volume, instance):
     instance.load()
     available_devices = set(DEVICES)
     for device in instance.block_device_mappings:
-        if device['DeviceName'].startswith('/dev/xvd'):
-            available_devices.remove(device['DeviceName'][-1])
+        available_devices.discard(device['DeviceName'][-1])
     logger.info("Attaching to instance")
     volume.attach_to_instance(InstanceId=instance.id, Device='/dev/xvd%s' % available_devices.pop())
 
